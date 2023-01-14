@@ -1,5 +1,25 @@
 #include "FS.h"
 
+
+String readArchive(String path)
+{
+  String data;
+  File rFile = SPIFFS.open(path, "r");
+  if(!rFile)
+  {
+    return "error";
+  }
+
+  //verifica se ainda há dados para leitura
+  while(rFile.available())
+  {
+    data = rFile.readStringUntil('\n');
+    writeSerialData(data);
+  }
+
+  rFile.close();
+  return "ok";
+}
 int writeArchive(String content, String path)
 {
   //Abre arquivo no modo escrita append
@@ -55,8 +75,9 @@ void setup()
  
 }
 
+uint32_t tick=0;
+using namespace std;
 void loop() {
-  
    String serialData;
    int attemp=0;
    
@@ -64,10 +85,22 @@ void loop() {
    if(serialData != "error")
    { 
     //write data into flash
-     if(writeArchive(serialData,"/logger.txt") != 0)
+     if(writeArchive(serialData,"/logger.txt") !=   0)
      {
       while((writeArchive(serialData,"/logger.txt") != 0) && (++attemp<2));
      }
- 
+     //Armazena o tick da última escrita / recebimento de dados
+     tick = millis(); 
+   }else
+   {
+    //Verifica se já passou 5 minutos desde o último dado recebido
+    //Se for true, significa que o rádio finalizou os envios dos dados
+    if((millis() - tick) > 120000)
+    {
+      Serial.print("Finish of sent data");
+      readArchive("/logger.txt");
+      delay(10);
+      Serial.end();
+    }
    }
 }
