@@ -2,7 +2,7 @@
 
 int writeArchive(String content, String path)
 {
-  //Abre arquivo no modo escrita e no modo append
+  //Abre arquivo no modo escrita append
   File rFile = SPIFFS.open(path, "a");
   
   if(!rFile)
@@ -45,28 +45,29 @@ void writeSerialData(String data)
 
 void setup() 
 {
-  int attemp=0;
   //iniciando serial
   Serial.begin(115200);
   //inicializa arquivos na serial
   if(openFS() != 0) 
   {
-    while((openFS() != 0) && (++attemp<2));
+    while(openFS() != 0);
   }
  
 }
 
 void loop() {
+  
    String serialData;
    int attemp=0;
    
    serialData = readSerialData();
    if(serialData != "error")
-   {
-     
+   { 
+    //write data into flash
      if(writeArchive(serialData,"/logger.txt") != 0)
      {
-      while(writeArchive(serialData,"/logger.txt") != 0) && (++attemp<2));
+      while((writeArchive(serialData,"/logger.txt") != 0) && (++attemp<2));
      }
+ 
    }
 }
