@@ -5,11 +5,10 @@ int openFS()
   //Abre sistemas de arquivo
   if(!SPIFFS.begin())
   {
-    return 0;
-  }else
-  {
-    return -1;
+    return 1;
   }
+
+  return 0;
 }
 
 String readSerialData(){
@@ -24,11 +23,18 @@ String readSerialData(){
 }
 
 void setup() {
-  Serial.begin(115200); // opens serial port, sets data rate to 9600 bps
+  //iniciando serial
+  Serial.begin(115200);
+  if(openFS() != 0) 
+  {
+    while(openFS() != 0){};
+  }
+ 
 }
 
 void loop() {
    String serialData;
+     
    serialData = readSerialData();
    
    if(serialData != "error")
