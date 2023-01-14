@@ -1,3 +1,17 @@
+#include "FS.h"
+
+int openFS()
+{
+  //Abre sistemas de arquivo
+  if(!SPIFFS.begin())
+  {
+    return 0;
+  }else
+  {
+    return -1;
+  }
+}
+
 String readSerialData(){
   String data;
   if(Serial.available()>0)
@@ -15,7 +29,6 @@ void setup() {
 
 void loop() {
    String serialData;
-   
    serialData = readSerialData();
    
    if(serialData != "error")
