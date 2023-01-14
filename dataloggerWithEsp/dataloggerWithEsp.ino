@@ -7,11 +7,12 @@ int openFS()
   {
     return 1;
   }
-
+  
   return 0;
 }
 
-String readSerialData(){
+String readSerialData()
+{
   String data;
   if(Serial.available()>0)
   {
@@ -22,9 +23,16 @@ String readSerialData(){
   return "error";
 }
 
-void setup() {
+void writeSerialData(String data)
+{
+  Serial.println(data);
+}
+
+void setup() 
+{
   //iniciando serial
   Serial.begin(115200);
+  //inicializa arquivos na serial
   if(openFS() != 0) 
   {
     while(openFS() != 0){};
@@ -39,6 +47,6 @@ void loop() {
    
    if(serialData != "error")
    {
-     Serial.println(serialData);
+     writeSerialData(serialData);
    }
 }
