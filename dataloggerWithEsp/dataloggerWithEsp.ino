@@ -1,11 +1,30 @@
 #include "FS.h"
 
 
+int checkSizeOfArchive(File archive)
+{
+  //The size of all flash is 4mb
+  //But we can use just 3mb for file system because 1mb it is for OTA
+  
+  uint32_t archiveSize=0;
+  archiveSize = archive.size();
+
+  if(archiveSize > 3000000)
+  {
+    return 1;
+  }
+
+  return 0;
+  
+}
+
+
 String readArchive(String path)
 {
   String data;
   File rFile = SPIFFS.open(path, "r");
-  if(!rFile)
+  
+  if(!rFile) 
   {
     return "error";
   }
@@ -13,6 +32,7 @@ String readArchive(String path)
   //verifica se ainda há dados para leitura
   while(rFile.available())
   {
+    delay(1);
     data = rFile.readStringUntil('\n');
     writeSerialData(data);
   }
@@ -25,7 +45,7 @@ int writeArchive(String content, String path)
   //Abre arquivo no modo escrita append
   File rFile = SPIFFS.open(path, "a");
   
-  if(!rFile)
+  if((!rFile) && (checkSizeOfArchive(rFile)))
   {
     return 1;
   }
@@ -76,7 +96,6 @@ void setup()
 }
 
 uint32_t tick=0;
-using namespace std;
 void loop() {
    String serialData;
    int attemp=0;
@@ -85,7 +104,7 @@ void loop() {
    if(serialData != "error")
    { 
     //write data into flash
-     if(writeArchive(serialData,"/logger.txt") !=   0)
+     if(writeArchive(serialData,"/logger.txt") != 0)
      {
       while((writeArchive(serialData,"/logger.txt") != 0) && (++attemp<2));
      }
@@ -95,12 +114,12 @@ void loop() {
    {
     //Verifica se já passou 5 minutos desde o último dado recebido
     //Se for true, significa que o rádio finalizou os envios dos dados
-    if((millis() - tick) > 120000)
+    if((millis() - tick) > 300000)
     {
       Serial.print("Finish of sent data");
       readArchive("/logger.txt");
-      delay(10);
-      Serial.end();
+      delay(50);
+      //Enter in PSM
     }
    }
 }
