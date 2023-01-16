@@ -1,5 +1,12 @@
 #include "FS.h"
 
+#define READ_BUTTON 4 //GPIO4 - D2
+
+int stateOfButton()
+{
+  int buttonRead = digitalRead(READ_BUTTON);
+  return buttonRead;
+}
 
 int checkSizeOfArchive(File archive)
 {
@@ -11,6 +18,7 @@ int checkSizeOfArchive(File archive)
 
   if(archiveSize > 3000000)
   {
+    Serial.print("\nFlash is full");
     return 1;
   }
 
@@ -40,6 +48,8 @@ String readArchive(String path)
   rFile.close();
   return "ok";
 }
+
+
 int writeArchive(String content, String path)
 {
   //Abre arquivo no modo escrita append
@@ -55,6 +65,8 @@ int writeArchive(String content, String path)
   
   return 0;
 }
+
+
 int openFS()
 {
   //Abre sistemas de arquivo
@@ -85,6 +97,9 @@ void writeSerialData(String data)
 
 void setup() 
 {
+  //Button for read the serial.
+  pinMode(READ_BUTTON, INPUT);
+  
   //iniciando serial
   Serial.begin(115200);
   //inicializa arquivos na serial
@@ -99,10 +114,17 @@ uint32_t tick=0;
 void loop() {
    String serialData;
    int attemp=0;
-   
+    
+   if(stateOfButton())
+   {
+    readArchive("/logger.txt");
+    delay(100);
+    Serial.end();
+   }
    serialData = readSerialData();
    if(serialData != "error")
    { 
+  
     //write data into flash
      if(writeArchive(serialData,"/logger.txt") != 0)
      {
@@ -116,10 +138,11 @@ void loop() {
     //Se for true, significa que o rádio finalizou os envios dos dados
     if((millis() - tick) > 300000)
     {
-      Serial.print("Finish of sent data");
-      readArchive("/logger.txt");
+      Serial.print("\nFinish of sent data\n");
       delay(50);
-      //Enter in PSM
+      //ESP.deepSleep(0);
     }
    }
+
+   
 }
