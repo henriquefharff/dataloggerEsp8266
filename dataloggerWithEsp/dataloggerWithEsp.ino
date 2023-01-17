@@ -1,7 +1,22 @@
 #include "FS.h"
+#include "ESP8266WiFi.h"
+
 
 #define READ_BUTTON 4 //GPIO4 - D2
+#define WAKE_UP_PIN 5 //GPIO5 - D1
 
+uint32_t runTimePeriod=0, wakeUpTick=0, sleepPeriod=0;
+void letsGoSleep()
+{
+  
+  runTimePeriod = (millis() - wakeUpTick) - 300000;
+  //24e10 = 40 minutes in microseconds.
+  //runTimePeriod is it in milliseconds and it's necessary convert to microseconds
+  sleepPeriod = 24e10 - (runTimePeriod*1000);
+  ESP.deepSleep(sleepPeriod);
+  
+  
+}
 int stateOfButton()
 {
   int buttonRead = digitalRead(READ_BUTTON);
@@ -97,52 +112,56 @@ void writeSerialData(String data)
 
 void setup() 
 {
+  wakeUpTick = millis();
+  //turn off the wifi to save battery
+  WiFi.mode(WIFI_OFF);
+  
   //Button for read the serial.
-  pinMode(READ_BUTTON, INPUT);
+  pinMode(READ_BUTTON, INPUT); 
   
   //iniciando serial
   Serial.begin(115200);
+  
   //inicializa arquivos na serial
   if(openFS() != 0) 
   {
     while(openFS() != 0);
   }
- 
+
+   Serial.print("\nWaking Up");
 }
 
 uint32_t tick=0;
-void loop() {
+int readyToSleep=0;
+void loop() 
+{
    String serialData;
    int attemp=0;
     
    if(stateOfButton())
    {
-    readArchive("/logger.txt");
-    delay(100);
-    Serial.end();
+      readArchive("/logger.txt");
+      delay(100);
    }
    serialData = readSerialData();
    if(serialData != "error")
    { 
-  
-    //write data into flash
+
+     //write data into flash
      if(writeArchive(serialData,"/logger.txt") != 0)
      {
-      while((writeArchive(serialData,"/logger.txt") != 0) && (++attemp<2));
+        while((writeArchive(serialData,"/logger.txt") != 0) && (++attemp<2));
      }
+     
      //Armazena o tick da última escrita / recebimento de dados
-     tick = millis(); 
+     tick = millis();
+     readyToSleep=1; 
    }else
    {
-    //Verifica se já passou 5 minutos desde o último dado recebido
-    //Se for true, significa que o rádio finalizou os envios dos dados
-    if((millis() - tick) > 300000)
-    {
-      Serial.print("\nFinish of sent data\n");
-      delay(50);
-      //ESP.deepSleep(0);
-    }
+      if((millis() - tick) > 300000 && (readyToSleep))
+      {
+          Serial.print("The radio is sleeping\n");
+          letsGoSleep();  
+      }
    }
-
-   
 }
