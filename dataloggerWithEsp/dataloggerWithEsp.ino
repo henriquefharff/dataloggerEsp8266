@@ -5,14 +5,14 @@
 #define READ_BUTTON 4 //GPIO4 - D2
 #define WAKE_UP_PIN 5 //GPIO5 - D1
 
-uint32_t runTimePeriod=0, wakeUpTick=0, sleepPeriod=0;
+uint32_t runTimePeriod=0, sleepPeriod=0,wakeUpRadioTick=0 ;
 void letsGoSleep()
 {
-  runTimePeriod = (millis() - wakeUpTick) - 300000;
+  runTimePeriod = (millis() - wakeUpRadioTick) - 300000;
   
-  //24e10 = 40 minutes in microseconds.
+  //24e8 = 40 minutes in microseconds.
   //runTimePeriod is it in milliseconds and it's necessary convert to microseconds
-  sleepPeriod = 24e10 - (runTimePeriod*1000);
+  sleepPeriod = 24e8 - (runTimePeriod*1000);
   
   ESP.deepSleep(sleepPeriod);
     
@@ -111,7 +111,6 @@ void writeSerialData(String data)
 
 void setup() 
 {
-  wakeUpTick = millis();
   //turn off the wifi to save battery
   WiFi.mode(WIFI_OFF);
   
@@ -127,7 +126,8 @@ void setup()
     while(openFS() != 0);
   }
 
-   Serial.print("\nWaking Up");
+  delay(2);
+  Serial.print("\nWaking Up\n");
 }
 
 uint32_t tick=0;
@@ -136,16 +136,21 @@ void loop()
 {
    String serialData;
    int attemp=0;
-    
+   
    if(stateOfButton())
    {
       readArchive("/logger.txt");
       delay(100);
    }
+   
    serialData = readSerialData();
    if(serialData != "error")
    { 
 
+      if(!readyToSleep)
+      {
+        wakeUpRadioTick=millis();
+      }
      //write data into flash
      if(writeArchive(serialData,"/logger.txt") != 0)
      {
