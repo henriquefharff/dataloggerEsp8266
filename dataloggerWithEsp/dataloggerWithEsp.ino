@@ -8,7 +8,7 @@
 uint32_t runTimePeriod=0, sleepPeriod=0,wakeUpRadioTick=0 ;
 void letsGoSleep()
 {
-  runTimePeriod = (millis() - wakeUpRadioTick) - 300000;
+  runTimePeriod = (millis() - wakeUpRadioTick) - 540000;
   
   //24e8 = 40 minutes in microseconds.
   //runTimePeriod is it in milliseconds and it's necessary convert to microseconds
@@ -69,7 +69,7 @@ int writeArchive(String content, String path)
   //Abre arquivo no modo escrita append
   File rFile = SPIFFS.open(path, "a");
   
-  if((!rFile) && (checkSizeOfArchive(rFile)))
+  if((!rFile) || (checkSizeOfArchive(rFile)))
   {
     return 1;
   }
