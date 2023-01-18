@@ -1,7 +1,6 @@
 #include "FS.h"
 #include "ESP8266WiFi.h"
 
-
 #define READ_BUTTON 4 //GPIO4 - D2
 #define WAKE_UP_PIN 5 //GPIO5 - D1
 
@@ -111,22 +110,21 @@ void writeSerialData(String data)
 
 void setup() 
 {
+  //iniciando serial
+  Serial.begin(115200);
+  
   //turn off the wifi to save battery
   WiFi.mode(WIFI_OFF);
   
   //Button for read the serial.
   pinMode(READ_BUTTON, INPUT); 
   
-  //iniciando serial
-  Serial.begin(115200);
-  
   //inicializa arquivos na serial
   if(openFS() != 0) 
   {
     while(openFS() != 0);
   }
-
-  delay(2);
+  while(!Serial){};
   Serial.print("\nWaking Up\n");
 }
 
