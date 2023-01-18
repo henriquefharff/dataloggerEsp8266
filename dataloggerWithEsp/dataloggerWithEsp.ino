@@ -13,7 +13,7 @@ void letsGoSleep()
   //24e8 = 40 minutes in microseconds.
   //runTimePeriod is it in milliseconds and it's necessary convert to microseconds
   sleepPeriod = 24e8 - (runTimePeriod*1000);
-  
+  Serial.println(sleepPeriod);
   ESP.deepSleep(sleepPeriod);
     
 }
@@ -162,7 +162,7 @@ void loop()
      readyToSleep=1; 
    }else
    {
-      if((millis() - tick) > 300000 && (readyToSleep))
+      if((millis() - tick) > 540000 && (readyToSleep))
       {
           Serial.print("The radio is sleeping\n");
           letsGoSleep();  
