@@ -1,8 +1,8 @@
 #include "FS.h"
 #include "ESP8266WiFi.h"
 
-#define READ_BUTTON 4 //GPIO4 - D2
-#define WAKE_UP_PIN 5 //GPIO5 - D1
+#define READ_BUTTON 4  //GPIO4 - D2
+#define LED_PIN 2     //GPIO2
 
 uint32_t runTimePeriod=0, sleepPeriod=0,wakeUpRadioTick=0 ;
 void letsGoSleep()
@@ -27,9 +27,8 @@ int checkSizeOfArchive(File archive)
   //The size of all flash is 4mb
   //But we can use just 3mb for file system because 1mb it is for OTA
   
-  uint32_t archiveSize=0;
+  uint32_t archiveSize=0; 
   archiveSize = archive.size();
-
   if(archiveSize > 3000000)
   {
     Serial.print("\nFlash is full");
@@ -44,7 +43,7 @@ String readArchive(String path)
 {
   String data;
   File rFile = SPIFFS.open(path, "r");
-  
+  Serial.println(rFile.size());
   if(!rFile) 
   {
     return "error";
@@ -112,13 +111,14 @@ void setup()
 {
   //iniciando serial
   Serial.begin(115200);
-  
+  Serial.setTimeout(500);
   //turn off the wifi to save battery
   WiFi.mode(WIFI_OFF);
+  WiFi.forceSleepBegin();
   
   //Button for read the serial.
-  pinMode(READ_BUTTON, INPUT); 
-  
+  pinMode(READ_BUTTON, INPUT_PULLUP); 
+  pinMode(LED_PIN, OUTPUT);
   //inicializa arquivos na serial
   if(openFS() != 0) 
   {
@@ -126,6 +126,12 @@ void setup()
   }
   while(!Serial){};
   Serial.print("\nWaking Up\n");
+
+  if(!stateOfButton())
+  {
+     readArchive("/logger.txt");
+     delay(100);
+  }
 }
 
 uint32_t tick=0;
@@ -133,18 +139,11 @@ int readyToSleep=0;
 void loop() 
 {
    String serialData;
-   int attemp=0;
-   
-   if(stateOfButton())
-   {
-      readArchive("/logger.txt");
-      delay(100);
-   }
-   
+   int attemp=0;  
    serialData = readSerialData();
    if(serialData != "error")
    { 
-
+      digitalWrite(LED_PIN, !digitalRead(LED_PIN));
       if(!readyToSleep)
       {
         wakeUpRadioTick=millis();
@@ -152,7 +151,13 @@ void loop()
      //write data into flash
      if(writeArchive(serialData,"/logger.txt") != 0)
      {
-        while((writeArchive(serialData,"/logger.txt") != 0) && (++attemp<2));
+        while(writeArchive(serialData,"/logger.txt") != 0)
+        {
+          if(++attemp>2)
+          {
+             letsGoSleep();
+          }
+        }
      }
      
      //Armazena o tick da última escrita / recebimento de dados
