@@ -111,14 +111,12 @@ void setup()
 {
   //iniciando serial
   Serial.begin(115200);
-  Serial.setTimeout(500);
   //turn off the wifi to save battery
   WiFi.mode(WIFI_OFF);
-  WiFi.forceSleepBegin();
-  
   //Button for read the serial.
   pinMode(READ_BUTTON, INPUT_PULLUP); 
   pinMode(LED_PIN, OUTPUT);
+  digitalWrite(LED_PIN, 0);
   //inicializa arquivos na serial
   if(openFS() != 0) 
   {
@@ -143,7 +141,6 @@ void loop()
    serialData = readSerialData();
    if(serialData != "error")
    { 
-      digitalWrite(LED_PIN, !digitalRead(LED_PIN));
       if(!readyToSleep)
       {
         wakeUpRadioTick=millis();
@@ -167,6 +164,7 @@ void loop()
    {
       if((millis() - tick) > 540000 && (readyToSleep))
       {
+          digitalWrite(LED_PIN, 1);
           Serial.print("The radio is sleeping\n");
           letsGoSleep();  
       }
